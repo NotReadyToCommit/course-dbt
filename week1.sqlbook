@@ -1,0 +1,125 @@
+-- SQLBook: Markup
+
+How many users do we have?
+-- SQLBook: Code
+select count(*) as rowcount from stg_users
+-- SQLBook: Code
+select count(distinct user_id) as rowcount from stg_users
+-- SQLBook: Markup
+answer: 130 users
+-- SQLBook: Markup
+
+On average, how many orders do we receive per hour?
+-- SQLBook: Code
+select 
+min(CREATED_AT),
+max(CREATED_AT)
+from stg_orders
+-- SQLBook: Code
+select 
+CREATED_AT,
+DATE_TRUNC(hour,CREATED_AT),
+day(CREATED_AT) as created_at_day,
+hour(CREATED_AT) as created_at_hour,
+ORDER_ID
+from stg_orders
+-- limit 10
+-- SQLBook: Code
+with orders_per_hour AS
+(
+select 
+DATE_TRUNC(hour,CREATED_AT) as created_at_hour,
+count(distinct ORDER_ID) as orders
+from stg_orders
+group by 1
+)
+select avg(orders) from orders_per_hour
+
+-- SQLBook: Markup
+answer: 7.520833
+-- SQLBook: Markup
+
+On average, how long does an order take from being placed to being delivered?
+-- SQLBook: Code
+SELECT 
+status,
+created_at,
+estimated_delivery_at,
+delivered_at,
+coalesce(delivered_at,estimated_delivery_at)
+from stg_orders
+-- where not (estimated_delivery_at is null and delivered_at is null)
+-- limit 10
+-- SQLBook: Code
+SELECT 
+status,
+created_at,
+estimated_delivery_at,
+delivered_at,
+coalesce(delivered_at,estimated_delivery_at)
+from stg_orders
+where status = 'delivered' -- where not (estimated_delivery_at is null and delivered_at is null)
+-- limit 10
+-- SQLBook: Code
+with delivery_times as (
+    SELECT 
+    status,
+    created_at,
+    estimated_delivery_at,
+    delivered_at,
+    coalesce(delivered_at,estimated_delivery_at),
+    TIMESTAMPDIFF( hour , created_at, delivered_at ) as hours_to_deliver
+    from stg_orders
+    where status = 'delivered'
+)
+ 
+select avg(hours_to_deliver) as hrs, avg(hours_to_deliver) /24 as days from delivery_times
+-- SQLBook: Markup
+answer  = 93.403279 hrs or 3.891803291667 days
+-- SQLBook: Markup
+How many users have only made one purchase? Two purchases? Three+ purchases?
+
+Note: you should consider a purchase to be a single order. In other words, if a user places one order for 3 products, they are considered to have made 1 purchase.
+-- SQLBook: Code
+with orders_per_user as (
+select 
+    user_id,
+    1 as user_count,
+    count(order_id) as num_orders
+from stg_orders
+group by 1,2
+)
+SELECT
+    case 
+        when num_orders = 1 then '1'
+        when num_orders = 2 then '2'
+        when num_orders >2 then '3+'
+        else 'error'
+    end as num_orders,
+    sum(user_count) as user_count
+
+from orders_per_user
+group by 1
+order by 1 asc
+-- SQLBook: Markup
+25 users made 1 order;
+28 users made 2 orders;
+71 users made 3+ orders
+-- SQLBook: Markup
+On average, how many unique sessions do we have per hour?
+-- SQLBook: Code
+select * from stg_events 
+-- SQLBook: Code
+select session_id, count(*) from stg_events group by 1
+-- SQLBook: Code
+with hourlysessions as (
+select 
+DATE_TRUNC(hour,CREATED_AT) as created_at_hour,
+count(session_id) as session_x_event,
+count(distinct session_id) as session_count
+from stg_events 
+group by 1
+)
+select avg(session_count) from hourlysessions
+-- SQLBook: Markup
+answer: 16.327586 sessions per hour

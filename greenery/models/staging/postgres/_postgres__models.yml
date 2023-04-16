@@ -1,0 +1,24 @@
+version: 2
+         
+tables:
+  - name: stg_addresses
+    description: >
+      Contains addresses for each user; keyed on address_id
+  - name: stg_users
+    description: >
+      Contains PII for each user; keyed on user_id
+  - name: stg_events
+    description: >
+      Contains event information; keyed on event_id
+  - name: stg_orders
+    description: >
+      Contains order information, keyed on order_id
+  - name: stg_products
+    description: >
+      Contains information about each product; keyed on product_id
+  - name: stg_order_items
+    description: >
+      Contains product quantities for each order; keyed on order_id, product_id
+  - name: stg_promos
+    description: >
+      Contains promo information if applicable; keyed on promo_id
