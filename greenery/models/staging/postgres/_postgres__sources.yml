@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+
+  - name: postgres # name of the source (this can be named whatever you want, but should be descriptive. this source (superheroes) is used for our week 1 tutorial so thats why i named it this way)
+    schema: public # this is the schema our raw data lives in
+    database: raw # this is the name of our database
+
+    tables:
+      - name: addresses
+        description: >
+          Contains addresses for each user; keyed on address_id
+      - name: users
+        description: >
+          Contains PII for each user; keyed on user_id
+      - name: events
+        description: >
+          Contains event information; keyed on event_id
+      - name: orders
+        description: >
+          Contains order information, keyed on order_id
+      - name: products
+        description: >
+          Contains information about each product; keyed on product_id
+      - name: order_items
+        description: >
+          Contains product quantities for each order; keyed on order_id, product_id
+      - name: promos
+        description: >
+          Contains promo information if applicable; keyed on promo_id
