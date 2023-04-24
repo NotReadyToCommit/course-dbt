@@ -1,0 +1,112 @@
+-- SQLBook: Markup
+## What is our user repeat rate?
+-- SQLBook: Code
+with more_than_one_order as (
+    select 
+    USER_ID,
+    count(distinct ORDER_ID) as ordercount
+    from stg_orders
+    group by 1
+)
+,
+base as (
+select 
+case when ordercount >1 then 1 end as count_repeat,
+1 as count_customer
+from more_than_one_order 
+)
+select 100*sum(count_repeat)/sum(count_customer) from base
+-- SQLBook: Markup
+answer 79.83871
+-- SQLBook: Markup
+## What event_types are there?
+-- SQLBook: Code
+select * from stg_events limit 20
+-- SQLBook: Code
+select event_type, count(*) from stg_events group by 1 order by 2 desc
+-- SQLBook: Markup
+page_view;          1871
+add_to_cart;        986
+checkout;           361
+package_shipped;    335
+-- SQLBook: Code
+
+    
+with order_sessions as (
+    SELECT 
+    SESSION_ID
+    ,ORDER_ID    
+    from stg_events
+    where event_type = 'checkout'
+)
+    select
+        PRODUCT_ID,
+        EVENT_TYPE,
+        date(created_at) as event_date,
+        count(base.SESSION_ID) AS EVENT_COUNT,
+        count(EVENT_ID) AS SESSION_COUNT,
+        count(USER_ID) AS USER_COUNT,
+        count(order_sessions.ORDER_ID) AS ORDER_COUNT
+    from stg_events base
+    left join order_sessions using (SESSION_ID)
+    group by 1,2,3
+-- SQLBook: Code
+
+
+    
+with order_sessions as (
+    SELECT 
+    SESSION_ID
+    ,ORDER_ID    
+    from stg_events
+    where event_type = 'checkout'
+),
+intermediatetable as (
+    select
+        PRODUCT_ID,
+        EVENT_TYPE,
+        date(created_at) as event_date,
+        count(base.SESSION_ID) AS EVENT_COUNT,
+        count(EVENT_ID) AS SESSION_COUNT,
+        count(USER_ID) AS USER_COUNT,
+        count(order_sessions.ORDER_ID) AS ORDER_COUNT
+    from stg_events base
+    left join order_sessions using (SESSION_ID)
+    group by 1,2,3
+)
+select 
+    event_date,
+    PRODUCT_ID,
+    NAME,
+    sum(SESSION_COUNT) as page_views,
+    sum(ORDER_COUNT) as orders,
+    sum(ORDER_COUNT)/sum(SESSION_COUNT) as conversion_rate
+from intermediatetable
+left JOIN (select PRODUCT_ID, name from stg_products) using( PRODUCT_ID)
+where EVENT_TYPE = 'page_view'
+group by 1,2,3
+order by 1 desc, 2
+-- SQLBook: Markup
+
+# Which products had their inventory change from week 1 to week 2?
+-- SQLBook: Code
+select * from inventory_snapshot WHERE inventory is not null
+-- SQLBook: Code
+with inventory_per_date as (
+select 
+date( dbt_updated_at) as update_date, 
+name, 
+inventory
+from inventory_snapshot 
+WHERE inventory is not null
+)
+select 
+thisweek.name,
+(thisweek.inventory - lastweek.inventory) as change_in_inventory
+from
+(select * from inventory_per_date where update_date = '2023-04-24') thisweek
+inner join 
+(select * from inventory_per_date where update_date = '2023-04-16') lastweek
+using(name) 
+-- SQLBook: Code
+select * from inventory_snapshot WHERE inventory is not null and NAME = 'Pothos'
